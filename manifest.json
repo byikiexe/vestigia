@@ -1,11 +1,9 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
-	"minAppVersion": "1.0.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
-	"isDesktopOnly": false
+  "id": "vestigia",
+  "name": "Vestigia",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Explore the hidden structure of your vault. Discover broken links, orphan notes, and forgotten files.",
+  "author": "byiki.exe",
+  "isDesktopOnly": false
 }
