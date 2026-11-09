@@ -3,6 +3,7 @@ import { VestigiaView, VIEW_TYPE_VESTIGIA } from "./views/VestigiaView";
 import { AnalysisService } from "./core/AnalysisService";
 import { VaultStatisticsService } from "./core/VaultStatisticsService";
 import { OrphanNotesAnalyzer } from "./analyzers/OrphanNotesAnalyzer";
+import { BrokenLinksAnalyzer } from "./analyzers/BrokenLinksAnalyzer";
 
 export default class VestigiaPlugin extends Plugin {
 	private analysisService!: AnalysisService;
@@ -17,6 +18,10 @@ export default class VestigiaPlugin extends Plugin {
 
 		this.analysisService.registerAnalyzer(
 			new OrphanNotesAnalyzer()
+		);
+
+		this.analysisService.registerAnalyzer(
+			new BrokenLinksAnalyzer(),
 		);
 
 		this.registerView(
@@ -40,6 +45,9 @@ export default class VestigiaPlugin extends Plugin {
 				void this.activateView();
 			},
 		});
+
+
+		
 	}
 
 	async activateView(): Promise<void> {
