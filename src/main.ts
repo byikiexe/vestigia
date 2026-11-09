@@ -2,6 +2,7 @@ import { Plugin, WorkspaceLeaf } from "obsidian";
 import { VestigiaView, VIEW_TYPE_VESTIGIA } from "./views/VestigiaView";
 import { AnalysisService } from "./core/AnalysisService";
 import { VaultStatisticsService } from "./core/VaultStatisticsService";
+import { OrphanNotesAnalyzer } from "./analyzers/OrphanNotesAnalyzer";
 
 export default class VestigiaPlugin extends Plugin {
 	private analysisService!: AnalysisService;
@@ -12,11 +13,20 @@ export default class VestigiaPlugin extends Plugin {
 		
 		this.analysisService = new AnalysisService(this.app);
 		this.statisticsService = new VaultStatisticsService(this.app);
+		this.analysisService = new AnalysisService(this.app);
+
+		this.analysisService.registerAnalyzer(
+			new OrphanNotesAnalyzer()
+		);
 
 		this.registerView(
 			VIEW_TYPE_VESTIGIA,
 			(leaf: WorkspaceLeaf) =>
-				new VestigiaView(leaf, this.statisticsService)
+				new VestigiaView(
+					leaf,
+					this.statisticsService,
+					this.analysisService
+				)
 		);
 
 		this.addRibbonIcon("fingerprint-pattern", "Open Vestigia", () => {
