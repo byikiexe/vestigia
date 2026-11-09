@@ -1,8 +1,27 @@
-/*
+/* Vestigia — Dashboard */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.vestigia-dashboard {
+	padding: 20px;
+}
 
-If your plugin does not need CSS, delete this file.
+.vestigia-dashboard h2 {
+	font-size: 24px;
+	font-weight: 600;
+	letter-spacing: -0.04em;
+	margin-bottom: 8px;
+	color: var(--text-normal);
+}
 
-*/
+.vestigia-subtitle {
+	font-size: 12px;
+	color: var(--text-muted);
+	line-height: 1.6;
+	margin-bottom: 32px;
+}
+
+.vestigia-placeholder {
+	padding: 24px 0;
+	border-top: 1px solid var(--background-modifier-border);
+	font-size: 13px;
+	color: var(--text-muted);
+}
