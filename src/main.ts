@@ -1,9 +1,14 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
 import { VestigiaView, VIEW_TYPE_VESTIGIA } from "./views/VestigiaView";
+import { AnalysisService } from "./core/AnalysisService";
 
 export default class VestigiaPlugin extends Plugin {
-	async onload(): Promise<void> {
+	private analysisService!: AnalysisService;
+
+	async onload(): Promise<void> {		
 		console.log("[Vestigia] Plugin loaded");
+		
+		this.analysisService = new AnalysisService(this.app);
 
 		this.registerView(
 			VIEW_TYPE_VESTIGIA,
