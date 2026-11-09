@@ -16,7 +16,7 @@ export class VestigiaView extends ItemView {
 	}
 
 	getIcon(): string {
-		return "scan-search";
+		return "fingerprint-pattern";
 	}
 
 	async onOpen(): Promise<void> {

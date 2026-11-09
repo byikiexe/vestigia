@@ -10,7 +10,7 @@ export default class VestigiaPlugin extends Plugin {
 			(leaf: WorkspaceLeaf) => new VestigiaView(leaf)
 		);
 
-		this.addRibbonIcon("scan-search", "Open Vestigia", () => {
+		this.addRibbonIcon("fingerprint-pattern", "Open Vestigia", () => {
 			void this.activateView();
 		});
 
@@ -26,16 +26,10 @@ export default class VestigiaPlugin extends Plugin {
 	async activateView(): Promise<void> {
 		const { workspace } = this.app;
 
-		let leaf: WorkspaceLeaf | null | undefined =
-			workspace.getLeavesOfType(VIEW_TYPE_VESTIGIA)[0];
+		let leaf = workspace.getLeavesOfType(VIEW_TYPE_VESTIGIA)[0];
 
 		if (!leaf) {
-			leaf = workspace.getRightLeaf(false);
-
-			if (!leaf) {
-				console.error("[Vestigia] Unable to create dashboard leaf");
-				return;
-			}
+			leaf = workspace.getLeaf("tab");
 
 			await leaf.setViewState({
 				type: VIEW_TYPE_VESTIGIA,
