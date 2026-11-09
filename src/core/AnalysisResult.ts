@@ -6,6 +6,7 @@ export interface AnalysisIssue {
     severity: IssueSeverity;
     message: string;
     filePath?: string;
+	metadata?: Record<string, unknown>;
 }
 
 export interface AnalysisResult {

@@ -50,6 +50,11 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 					severity: reference.severity,
 					message: `${reference.type}: ${reference.target}`,
 					filePath: reference.sourcePath,
+					metadata: {
+						target: reference.target,
+						type: reference.type,
+						position: reference.position,
+					},
 				});
 			}
 		}
