@@ -1,18 +1,22 @@
 import { Plugin, WorkspaceLeaf } from "obsidian";
 import { VestigiaView, VIEW_TYPE_VESTIGIA } from "./views/VestigiaView";
 import { AnalysisService } from "./core/AnalysisService";
+import { VaultStatisticsService } from "./core/VaultStatisticsService";
 
 export default class VestigiaPlugin extends Plugin {
 	private analysisService!: AnalysisService;
+	private statisticsService!: VaultStatisticsService;
 
 	async onload(): Promise<void> {		
 		console.log("[Vestigia] Plugin loaded");
 		
 		this.analysisService = new AnalysisService(this.app);
+		this.statisticsService = new VaultStatisticsService(this.app);
 
 		this.registerView(
 			VIEW_TYPE_VESTIGIA,
-			(leaf: WorkspaceLeaf) => new VestigiaView(leaf)
+			(leaf: WorkspaceLeaf) =>
+				new VestigiaView(leaf, this.statisticsService)
 		);
 
 		this.addRibbonIcon("fingerprint-pattern", "Open Vestigia", () => {
