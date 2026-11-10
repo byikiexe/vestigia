@@ -4,17 +4,18 @@ import { AnalysisService } from "./core/AnalysisService";
 import { VaultStatisticsService } from "./core/VaultStatisticsService";
 import { OrphanNotesAnalyzer } from "./analyzers/OrphanNotesAnalyzer";
 import { BrokenLinksAnalyzer } from "./analyzers/BrokenLinksAnalyzer";
+import { IgnoredReferencesService } from "./core/IgnoredReferencesService";
 
 export default class VestigiaPlugin extends Plugin {
 	private analysisService!: AnalysisService;
 	private statisticsService!: VaultStatisticsService;
+	private ignoredReferencesService!: IgnoredReferencesService;
 
-	async onload(): Promise<void> {		
-		console.log("[Vestigia] Plugin loaded");
+	async onload(): Promise<void> {			
 		
 		this.analysisService = new AnalysisService(this.app);
 		this.statisticsService = new VaultStatisticsService(this.app);
-		this.analysisService = new AnalysisService(this.app);
+		this.ignoredReferencesService = new IgnoredReferencesService();
 
 		this.analysisService.registerAnalyzer(
 			new OrphanNotesAnalyzer()
