@@ -103,10 +103,10 @@ export class VestigiaView extends ItemView {
 		this.contentEl.empty();
 	}
 
-	private async renderOrphanNotes(
+	private renderOrphanNotes(
 		container: HTMLElement,
 		orphanResult: AnalysisResult
-	): Promise<void> {
+	): void {
 		const section = container.createDiv({
 			cls: "vestigia-issues-section",
 		});
@@ -416,4 +416,6 @@ export class VestigiaView extends ItemView {
 			new Notice("Unable to open the source note.");
 		}
 	}
+
+	
 }
