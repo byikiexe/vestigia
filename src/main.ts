@@ -92,11 +92,17 @@ export default class VestigiaPlugin extends Plugin {
 						ignore: (sourcePath, target) =>
 							this.ignoreReference(sourcePath, target),
 
+						restore: (sourcePath, target) =>
+							this.restoreReference(sourcePath, target),
+
 						isIgnored: (sourcePath, target) =>
 							this.ignoredReferencesService.isIgnored(
 								sourcePath,
 								target
 							),
+
+						getIgnored: () =>
+							this.ignoredReferencesService.getAll(),
 					}
 				)
 		);

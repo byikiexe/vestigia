@@ -545,3 +545,82 @@
         opacity: 1;
     }
 }
+
+/* =========================================
+   VESTIGIA — IGNORED REFERENCES
+   ========================================= */
+
+.vestigia-dashboard button.vestigia-ignored-toggle {
+    display: inline-flex;
+    align-items: center;
+
+    width: auto;
+    height: auto;
+    min-height: 0;
+
+    margin-top: 18px;
+    padding: 4px 0;
+
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    color: var(--text-muted);
+
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+
+    cursor: pointer;
+}
+
+.vestigia-dashboard button.vestigia-ignored-toggle:hover {
+    color: var(--vestigia-violet, #7F3AED);
+    background: transparent;
+    box-shadow: none;
+}
+
+.vestigia-dashboard button.vestigia-ignored-toggle:focus-visible {
+    outline: 2px solid var(--vestigia-violet, #7F3AED);
+    outline-offset: 4px;
+}
+
+.vestigia-ignored-section {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.vestigia-ignored-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 24px;
+}
+
+.vestigia-ignored-title {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+}
+
+.vestigia-ignored-count {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.vestigia-ignored-row {
+    opacity: 0.65;
+}
+
+.vestigia-ignored-row:hover,
+.vestigia-ignored-row:focus-within {
+    opacity: 1;
+}
+
+.vestigia-ignored-row .vestigia-fractures-indicator {
+    background: var(--text-faint);
+}

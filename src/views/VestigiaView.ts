@@ -8,9 +8,16 @@ import type { VaultStatistics } from "../core/VaultStatistics";
 
 export const VIEW_TYPE_VESTIGIA = "vestigia-dashboard";
 
+interface IgnoredReference {
+	sourcePath: string;
+	target: string;
+}
+
 interface ReferenceActions {
 	ignore(sourcePath: string, target: string): Promise<void>;
+	restore(sourcePath: string, target: string): Promise<void>;
 	isIgnored(sourcePath: string, target: string): boolean;
+	getIgnored(): IgnoredReference[];
 }
 
 export class VestigiaView extends ItemView {
@@ -30,6 +37,10 @@ export class VestigiaView extends ItemView {
 	private isScanning = false;
 	private scanGeneration = 0;
 	private scanStatusTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	private showIgnored = false;
+	private lastStatistics: VaultStatistics | null = null;
+	private lastResults: AnalysisResult[] = [];
 
 
 	getViewType(): string {
@@ -170,9 +181,13 @@ export class VestigiaView extends ItemView {
 				return;
 			}
 
+			this.lastStatistics = statistics;
+			this.lastResults = results;
+
 			this.updateDashboard(statistics, results);
 
 			this.setScanStatus("complete");
+
 		} catch (error) {
 			if (generation !== this.scanGeneration) return;
 
@@ -360,30 +375,40 @@ export class VestigiaView extends ItemView {
 		}
 
 		if (brokenResult) {
-			const activeIssues = brokenResult.issues.filter((issue) => {
+			const activeIssues: AnalysisIssue[] = [];
+			const ignoredIssues: AnalysisIssue[] = [];
+
+			for (const issue of brokenResult.issues) {
 				const sourcePath = issue.filePath;
 				const target = issue.metadata?.target;
 
-				if (!sourcePath || typeof target !== "string") {
-					return true;
+				const ignored =
+					!!sourcePath &&
+					typeof target === "string" &&
+					this.referenceActions.isIgnored(sourcePath, target);
+
+				if (ignored) {
+					ignoredIssues.push(issue);
+				} else {
+					activeIssues.push(issue);
 				}
+			}
 
-				return !this.referenceActions.isIgnored(
-					sourcePath,
-					target
-				);
-			});
-
-			this.renderBrokenReferences(this.analysisContainer, {
-				...brokenResult,
-				issues: activeIssues,
-			});
+			this.renderBrokenReferences(
+				this.analysisContainer,
+				{
+					...brokenResult,
+					issues: activeIssues,
+				},
+				ignoredIssues
+			);
 		}
 	}
 
 	private renderBrokenReferences(
 		container: HTMLElement,
-		result: AnalysisResult
+		result: AnalysisResult,
+		ignoredIssues: AnalysisIssue[] = []
 	): void {
 		const section = container.createDiv({
 			cls: "vestigia-issues-section vestigia-fractures",
@@ -416,21 +441,40 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-section-description",
 		});
 
+		if (ignoredIssues.length > 0) {
+			const toggle = header.createEl("button", {
+				cls: "vestigia-ignored-toggle",
+				attr: {
+					type: "button",
+					"aria-expanded": String(this.showIgnored),
+				},
+			});
+
+			toggle.setText(
+				`${this.showIgnored ? "Hide" : "Show"} ignored (${String(
+					ignoredIssues.length
+				).padStart(2, "0")})`
+			);
+
+			toggle.addEventListener("click", () => {
+				this.showIgnored = !this.showIgnored;
+				this.refreshDashboard();
+			});
+		}
+
 		if (result.issues.length === 0) {
 			const emptyState = section.createDiv({
 				cls: "vestigia-fractures-empty",
 			});
 
 			emptyState.createEl("span", {
-				text: "ALL CONNECTIONS RESOLVED",
+				text: "NO ACTIVE BROKEN REFERENCES",
 				cls: "vestigia-fractures-empty-title",
 			});
 
 			emptyState.createEl("p", {
-				text: "No broken references detected in your vault.",
+				text: "No active broken references detected in your vault.",
 			});
-
-			return;
 		}
 
 		const groups = new Map<string, AnalysisIssue[]>();
@@ -465,6 +509,11 @@ export class VestigiaView extends ItemView {
 			for (const issue of issues) {
 				this.renderBrokenReferenceItem(group, issue);
 			}
+		}
+
+		// Render ignored references when expanded
+		if (this.showIgnored && ignoredIssues.length > 0) {
+			this.renderIgnoredReferences(section, ignoredIssues);
 		}
 	}
 
@@ -645,7 +694,7 @@ export class VestigiaView extends ItemView {
 
 			new Notice("Reference ignored.");
 
-			await this.scanVault();
+			this.refreshDashboard();
 		} catch (error) {
 			console.error(
 				"[Vestigia] Failed to ignore reference:",
@@ -655,5 +704,160 @@ export class VestigiaView extends ItemView {
 			new Notice("Unable to ignore reference.");
 		}
 	}
+
+	private renderIgnoredReferences(
+		container: HTMLElement,
+		issues: AnalysisIssue[]
+	): void {
+		const section = container.createDiv({
+			cls: "vestigia-ignored-section",
+		});
+
+		const header = section.createDiv({
+			cls: "vestigia-ignored-header",
+		});
+
+		header.createSpan({
+			text: "IGNORED REFERENCES",
+			cls: "vestigia-ignored-title",
+		});
+
+		header.createSpan({
+			text: String(issues.length).padStart(2, "0"),
+			cls: "vestigia-ignored-count",
+		});
+
+		const groups = new Map<string, AnalysisIssue[]>();
+
+		for (const issue of issues) {
+			if (!issue.filePath) continue;
+
+			const group = groups.get(issue.filePath) ?? [];
+			group.push(issue);
+			groups.set(issue.filePath, group);
+		}
+
+		for (const [sourcePath, references] of groups) {
+			const group = section.createDiv({
+				cls: "vestigia-fractures-group",
+			});
+
+			const groupHeader = group.createDiv({
+				cls: "vestigia-fractures-group-header",
+			});
+
+			groupHeader.createSpan({
+				text: sourcePath.split("/").pop() ?? sourcePath,
+				cls: "vestigia-fractures-source",
+			});
+
+			for (const issue of references) {
+				this.renderIgnoredReferenceItem(group, issue);
+			}
+		}
+	}
+
+	private renderIgnoredReferenceItem(
+		container: HTMLElement,
+		issue: AnalysisIssue
+	): void {
+		const row = container.createDiv({
+			cls: "vestigia-fractures-row vestigia-ignored-row",
+		});
+
+		const item = row.createEl("button", {
+			cls: "vestigia-fractures-item",
+			attr: {
+				type: "button",
+				"aria-label": "Open ignored reference",
+			},
+		});
+
+		item.createSpan({
+			cls: "vestigia-fractures-indicator",
+		});
+
+		const content = item.createDiv({
+			cls: "vestigia-fractures-item-content",
+		});
+
+		content.createSpan({
+			text: String(issue.metadata?.target ?? issue.message),
+			cls: "vestigia-fractures-item-target",
+		});
+
+		content.createSpan({
+			text: "Ignored",
+			cls: "vestigia-fractures-item-severity",
+		});
+
+		item.addEventListener("click", () => {
+			void this.navigateToReference(issue);
+		});
+
+		const menuButton = row.createEl("button", {
+			cls: "vestigia-reference-menu",
+			attr: {
+				type: "button",
+				"aria-label": "Ignored reference actions",
+				"aria-haspopup": "menu",
+			},
+		});
+
+		setIcon(menuButton, "ellipsis");
+
+		menuButton.addEventListener("click", (event) => {
+			event.stopPropagation();
+
+			const menu = new Menu();
+
+			menu.addItem((menuItem) => {
+				menuItem
+					.setTitle("Restore reference")
+					.setIcon("eye")
+					.onClick(() => {
+						void this.handleRestoreReference(issue);
+					});
+			});
+
+			menu.showAtMouseEvent(event);
+		});
+	}
+
+	private async handleRestoreReference(
+		issue: AnalysisIssue
+	): Promise<void> {
+		const sourcePath = issue.filePath;
+		const target = issue.metadata?.target;
+
+		if (!sourcePath || typeof target !== "string") {
+			new Notice("Unable to restore this reference.");
+			return;
+		}
+
+		try {
+			await this.referenceActions.restore(sourcePath, target);
+
+			this.refreshDashboard();
+
+			new Notice("Reference restored.");
+		} catch (error) {
+			console.error(
+				"[Vestigia] Failed to restore reference:",
+				error
+			);
+
+			new Notice("Unable to restore reference.");
+		}
+	}
+
+	private refreshDashboard(): void {
+    if (!this.lastStatistics) return;
+
+    this.updateDashboard(
+        this.lastStatistics,
+        this.lastResults
+    );
+}
 
 }
