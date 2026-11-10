@@ -87,7 +87,17 @@ export default class VestigiaPlugin extends Plugin {
 				new VestigiaView(
 					leaf,
 					this.statisticsService,
-					this.analysisService
+					this.analysisService,
+					{
+						ignore: (sourcePath, target) =>
+							this.ignoreReference(sourcePath, target),
+
+						isIgnored: (sourcePath, target) =>
+							this.ignoredReferencesService.isIgnored(
+								sourcePath,
+								target
+							),
+					}
 				)
 		);
 

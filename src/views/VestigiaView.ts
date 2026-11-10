@@ -1,4 +1,4 @@
-import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon, } from "obsidian";
+import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon, Menu, } from "obsidian";
 import type { VaultStatisticsService } from "../core/VaultStatisticsService";
 import { AnalysisService } from "../core/AnalysisService";
 import type { AnalysisIssue, AnalysisResult, } from "../core/AnalysisResult";
@@ -8,11 +8,17 @@ import type { VaultStatistics } from "../core/VaultStatistics";
 
 export const VIEW_TYPE_VESTIGIA = "vestigia-dashboard";
 
+interface ReferenceActions {
+	ignore(sourcePath: string, target: string): Promise<void>;
+	isIgnored(sourcePath: string, target: string): boolean;
+}
+
 export class VestigiaView extends ItemView {
 	constructor(
 		leaf: WorkspaceLeaf,
 		private readonly statisticsService: VaultStatisticsService,
-		private readonly analysisService: AnalysisService
+		private readonly analysisService: AnalysisService,
+		private readonly referenceActions: ReferenceActions
 	) {
 		super(leaf);
 	}
@@ -354,10 +360,24 @@ export class VestigiaView extends ItemView {
 		}
 
 		if (brokenResult) {
-			this.renderBrokenReferences(
-				this.analysisContainer,
-				brokenResult
-			);
+			const activeIssues = brokenResult.issues.filter((issue) => {
+				const sourcePath = issue.filePath;
+				const target = issue.metadata?.target;
+
+				if (!sourcePath || typeof target !== "string") {
+					return true;
+				}
+
+				return !this.referenceActions.isIgnored(
+					sourcePath,
+					target
+				);
+			});
+
+			this.renderBrokenReferences(this.analysisContainer, {
+				...brokenResult,
+				issues: activeIssues,
+			});
 		}
 	}
 
@@ -461,7 +481,13 @@ export class VestigiaView extends ItemView {
 			"missing-block": "Missing block",
 		};
 
-		const item = container.createEl("button", {
+		// Contenedor de la referencia
+		const row = container.createDiv({
+			cls: "vestigia-fractures-row",
+		});
+
+		// Botón principal: navegar a la referencia
+		const item = row.createEl("button", {
 			cls: "vestigia-fractures-item",
 			attr: {
 				type: "button",
@@ -487,22 +513,48 @@ export class VestigiaView extends ItemView {
 		});
 
 		content.createEl("span", {
-			text: String(
-				issue.metadata?.target ?? issue.message
-			),
+			text: String(issue.metadata?.target ?? issue.message),
 			cls: "vestigia-fractures-item-target",
 		});
 
 		content.createEl("span", {
-			text:
-				issue.severity === "info"
-					? "Informational"
-					: "Warning",
+			text: issue.severity === "info"
+				? "Informational"
+				: "Warning",
 			cls: "vestigia-fractures-item-severity",
 		});
 
 		item.addEventListener("click", () => {
 			void this.navigateToReference(issue);
+		});
+
+		// Botón de acciones
+		const menuButton = row.createEl("button", {
+			cls: "vestigia-reference-menu",
+			attr: {
+				type: "button",
+				"aria-label": "Reference actions",
+				"aria-haspopup": "menu",
+			},
+		});
+
+		setIcon(menuButton, "ellipsis");
+
+		menuButton.addEventListener("click", (event) => {
+			event.stopPropagation();
+
+			const menu = new Menu();
+
+			menu.addItem((menuItem) => {
+				menuItem
+					.setTitle("Ignore reference")
+					.setIcon("eye-off")
+					.onClick(() => {
+						void this.handleIgnoreReference(issue);
+					});
+			});
+
+			menu.showAtMouseEvent(event);
 		});
 	}
 
@@ -577,5 +629,31 @@ export class VestigiaView extends ItemView {
 		}
 	}
 
+	private async handleIgnoreReference(
+		issue: AnalysisIssue
+	): Promise<void> {
+		const sourcePath = issue.filePath;
+		const target = issue.metadata?.target;
+
+		if (!sourcePath || typeof target !== "string") {
+			new Notice("Unable to ignore this reference.");
+			return;
+		}
+
+		try {
+			await this.referenceActions.ignore(sourcePath, target);
+
+			new Notice("Reference ignored.");
+
+			await this.scanVault();
+		} catch (error) {
+			console.error(
+				"[Vestigia] Failed to ignore reference:",
+				error
+			);
+
+			new Notice("Unable to ignore reference.");
+		}
+	}
 
 }

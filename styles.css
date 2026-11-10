@@ -474,3 +474,74 @@
         gap: 16px;
     }
 }
+
+/* =========================================
+   VESTIGIA — REFERENCE ACTIONS
+   ========================================= */
+
+.vestigia-fractures-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.vestigia-fractures-row > .vestigia-fractures-item {
+    flex: 1;
+    min-width: 0;
+}
+
+.vestigia-dashboard button.vestigia-reference-menu {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 32px;
+
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+
+    padding: 0;
+
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    box-shadow: none;
+
+    cursor: pointer;
+
+    opacity: 0.45;
+    transition:
+        opacity 150ms ease,
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+.vestigia-reference-menu svg {
+    width: 17px;
+    height: 17px;
+}
+
+.vestigia-fractures-row:hover .vestigia-reference-menu,
+.vestigia-reference-menu:focus-visible {
+    opacity: 1;
+}
+
+.vestigia-dashboard button.vestigia-reference-menu:hover {
+    color: var(--text-normal);
+    background: var(--background-modifier-hover);
+    box-shadow: none;
+}
+
+.vestigia-dashboard button.vestigia-reference-menu:focus-visible {
+    outline: 2px solid var(--vestigia-violet, #7F3AED);
+    outline-offset: 2px;
+}
+
+@media (hover: none) {
+    .vestigia-dashboard button.vestigia-reference-menu {
+        opacity: 1;
+    }
+}
