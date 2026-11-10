@@ -1,8 +1,10 @@
-import { ItemView, Notice, TFile, WorkspaceLeaf, } from "obsidian";
+import { ItemView, Notice, TFile, WorkspaceLeaf, setIcon, } from "obsidian";
 import type { VaultStatisticsService } from "../core/VaultStatisticsService";
 import { AnalysisService } from "../core/AnalysisService";
 import type { AnalysisIssue, AnalysisResult, } from "../core/AnalysisResult";
 import type { BrokenReferenceType, } from "../core/BrokenReference";
+import type { VaultStatistics } from "../core/VaultStatistics";
+
 
 export const VIEW_TYPE_VESTIGIA = "vestigia-dashboard";
 
@@ -14,6 +16,15 @@ export class VestigiaView extends ItemView {
 	) {
 		super(leaf);
 	}
+
+	private scanButton: HTMLButtonElement | null = null;
+	private overviewContainer: HTMLElement | null = null;
+	private analysisContainer: HTMLElement | null = null;
+
+	private isScanning = false;
+	private scanGeneration = 0;
+	private scanStatusTimeout: ReturnType<typeof setTimeout> | null = null;
+
 
 	getViewType(): string {
 		return VIEW_TYPE_VESTIGIA;
@@ -28,57 +39,156 @@ export class VestigiaView extends ItemView {
 	}
 
 	async onOpen(): Promise<void> {
-		this.render();
+		this.renderLayout();
+		await this.scanVault();
 	}
 
-	private render(): void {
+	private renderLayout(): void {
 		const container = this.contentEl;
 
 		container.empty();
 		container.addClass("vestigia-dashboard");
 
-		container.createEl("h2", {
-			text: "vestigia.",
+		// Header
+		const header = container.createDiv({
+			cls: "vestigia-topbar",
 		});
 
-		container.createEl("p", {
+		const branding = header.createDiv({
+			cls: "vestigia-branding",
+		});
+
+		const logo = branding.createEl("h2");
+
+		logo.createSpan({ text: "vestigia" });
+
+		logo.createSpan({
+			text: ".",
+			cls: "vestigia-logo-dot",
+		});
+
+		branding.createEl("p", {
 			text: "Trace what your knowledge leaves behind.",
 			cls: "vestigia-subtitle",
 		});
 
-		const statistics = this.statisticsService.collect();
+		// Scan button
+		this.scanButton = header.createEl("button", {
+			cls: "vestigia-scan-button",
+			attr: {
+				type: "button",
+				"aria-label": "Scan vault",
+			},
+		});
 
-		const overview = container.createDiv({
+		this.scanButton.addEventListener("click", () => {
+			void this.scanVault();
+		});
+
+		this.setScanStatus("idle");
+
+		// Containers
+		this.overviewContainer = container.createDiv({
 			cls: "vestigia-overview",
 		});
 
-		this.createStatCard(
-			overview,
-			"Notes",
-			statistics.totalNotes
-		);
-
-		this.createStatCard(
-			overview,
-			"Folders",
-			statistics.totalFolders
-		);
-
-		this.createStatCard(
-			overview,
-			"Attachments",
-			statistics.totalAttachments
-		);
-
-		this.createStatCard(
-			overview,
-			"Total files",
-			statistics.totalFiles
-		);
-
-		void this.renderAnalysis(container);
+		this.analysisContainer = container.createDiv({
+			cls: "vestigia-analysis",
+		});
 	}
 
+	private setScanStatus(
+		status: "idle" | "scanning" | "complete" | "failed"
+	): void {
+		const button = this.scanButton;
+
+		if (!button) return;
+
+		const labels = {
+			idle: "Scan vault",
+			scanning: "Scanning...",
+			complete: "Scan complete",
+			failed: "Scan failed",
+		};
+
+		button.empty();
+
+		const icon = button.createSpan({
+			cls: "vestigia-scan-icon",
+		});
+
+		const iconName =
+			status === "complete"
+				? "check"
+				: status === "failed"
+					? "alert-circle"
+					: "refresh-cw";
+
+		setIcon(icon, iconName);
+
+		button.createSpan({
+			text: labels[status],
+		});
+
+		button.disabled = status === "scanning";
+
+		button.setAttribute("aria-label", labels[status]);
+
+		button.toggleClass("is-scanning", status === "scanning");
+	}
+
+	private async scanVault(): Promise<void> {
+		if (this.isScanning) return;
+
+		this.isScanning = true;
+
+		const generation = ++this.scanGeneration;
+
+		if (this.scanStatusTimeout !== null) {
+			clearTimeout(this.scanStatusTimeout);
+			this.scanStatusTimeout = null;
+		}
+
+		this.setScanStatus("scanning");
+
+		try {
+			const statistics = this.statisticsService.collect();
+
+			const results = await this.analysisService.run();
+
+			// Ignore results from a closed or replaced view.
+			if (
+				generation !== this.scanGeneration ||
+				!this.contentEl.isConnected
+			) {
+				return;
+			}
+
+			this.updateDashboard(statistics, results);
+
+			this.setScanStatus("complete");
+		} catch (error) {
+			if (generation !== this.scanGeneration) return;
+
+			console.error("[Vestigia] Vault scan failed:", error);
+
+			this.setScanStatus("failed");
+
+			new Notice("Vestigia: vault scan failed.");
+		} finally {
+			if (generation === this.scanGeneration) {
+				this.isScanning = false;
+
+				this.scanStatusTimeout = setTimeout(() => {
+					if (generation === this.scanGeneration) {
+						this.setScanStatus("idle");
+					}
+
+					this.scanStatusTimeout = null;
+				}, 3000);
+			}
+		}
+	}
 	private createStatCard(
 		container: HTMLElement,
 		label: string,
@@ -100,6 +210,19 @@ export class VestigiaView extends ItemView {
 	}
 
 	async onClose(): Promise<void> {
+		++this.scanGeneration;
+
+		this.isScanning = false;
+
+		if (this.scanStatusTimeout !== null) {
+			clearTimeout(this.scanStatusTimeout);
+			this.scanStatusTimeout = null;
+		}
+
+		this.scanButton = null;
+		this.overviewContainer = null;
+		this.analysisContainer = null;
+
 		this.contentEl.empty();
 	}
 
@@ -177,13 +300,43 @@ export class VestigiaView extends ItemView {
 			});
 		}
 	}
+	private updateDashboard(
+		statistics: VaultStatistics,
+		results: AnalysisResult[]
+	): void {
+		if (!this.overviewContainer || !this.analysisContainer) {
+			return;
+		}
 
-	private async renderAnalysis(
-		container: HTMLElement
-	): Promise<void> {
-		const results = await this.analysisService.run();
+		// Update statistics
+		this.overviewContainer.empty();
 
-		if (!container.isConnected) return;
+		this.createStatCard(
+			this.overviewContainer,
+			"Notes",
+			statistics.totalNotes
+		);
+
+		this.createStatCard(
+			this.overviewContainer,
+			"Folders",
+			statistics.totalFolders
+		);
+
+		this.createStatCard(
+			this.overviewContainer,
+			"Attachments",
+			statistics.totalAttachments
+		);
+
+		this.createStatCard(
+			this.overviewContainer,
+			"Total files",
+			statistics.totalFiles
+		);
+
+		// Update analysis results
+		this.analysisContainer.empty();
 
 		const orphanResult = results.find(
 			(result) => result.analyzerId === "orphan-notes"
@@ -194,13 +347,20 @@ export class VestigiaView extends ItemView {
 		);
 
 		if (orphanResult) {
-			this.renderOrphanNotes(container, orphanResult);
+			this.renderOrphanNotes(
+				this.analysisContainer,
+				orphanResult
+			);
 		}
 
 		if (brokenResult) {
-			this.renderBrokenReferences(container, brokenResult);
+			this.renderBrokenReferences(
+				this.analysisContainer,
+				brokenResult
+			);
 		}
 	}
+
 	private renderBrokenReferences(
 		container: HTMLElement,
 		result: AnalysisResult
@@ -417,5 +577,5 @@ export class VestigiaView extends ItemView {
 		}
 	}
 
-	
+
 }

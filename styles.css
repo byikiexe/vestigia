@@ -1,65 +1,79 @@
 /* ==========================================================
-   VESTIGIA
-   Knowledge archaeology for Obsidian
+   VESTIGIA — Neo Editorial / Y2K
+   Editorial restraint. Neon accents. Obsidian-native themes.
    ========================================================== */
 
-/* ----------------------------------------------------------
-   01. Dashboard
-   ---------------------------------------------------------- */
-
+/* 01. Design tokens and dashboard */
 .vestigia-dashboard {
-    --vestigia-border: var(--background-modifier-border);
-    --vestigia-muted: var(--text-muted);
     --vestigia-text: var(--text-normal);
+    --vestigia-muted: var(--text-muted);
+    --vestigia-border: var(--background-modifier-border);
+    --vestigia-violet: #7f3aed;
+    --vestigia-lime: #c6ff34;
+    --vestigia-pink: #f54298;
+    --vestigia-info: #7f3aed;
+    --vestigia-warning: #f54298;
+    --vestigia-danger: #e83d68;
+    --vestigia-success: #4d9b78;
+    --vestigia-focus: var(--vestigia-violet);
+    --vestigia-hover: var(--background-modifier-hover);
 
+    box-sizing: border-box;
     width: 100%;
     max-width: 1200px;
-
     margin: 0 auto;
     padding: 48px 48px 80px;
-
     color: var(--vestigia-text);
+}
+
+/* Neon tones remain legible as small text on light backgrounds. */
+.theme-light .vestigia-dashboard {
+    --vestigia-info: #6331ce;
+    --vestigia-warning: #ba176a;
+    --vestigia-danger: #b21f4c;
+    --vestigia-success: #387a35;
+    --vestigia-focus: #6930d4;
+}
+
+.theme-dark .vestigia-dashboard {
+    --vestigia-info: #a17bff;
+    --vestigia-warning: #ff65b1;
+    --vestigia-danger: #ff557e;
+    --vestigia-success: var(--vestigia-lime);
+    --vestigia-focus: #a886ff;
+}
+
+.vestigia-dashboard *,
+.vestigia-dashboard *::before,
+.vestigia-dashboard *::after {
     box-sizing: border-box;
 }
 
-/* ----------------------------------------------------------
-   02. Header
-   ---------------------------------------------------------- */
-
+/* 02. Header */
+.vestigia-logo-dot { color: var(--vestigia-violet); }
 .vestigia-dashboard h2 {
     margin: 0;
-
+    color: var(--vestigia-text);
     font-size: 32px;
     font-weight: 650;
     letter-spacing: -0.065em;
     line-height: 1.15;
-
-    color: var(--vestigia-text);
 }
 
 .vestigia-subtitle {
     margin: 12px 0 0;
-
+    color: var(--vestigia-muted);
     font-size: 13px;
     font-weight: 400;
     line-height: 1.7;
-
-    color: var(--vestigia-muted);
 }
 
-/* ----------------------------------------------------------
-   03. Overview
-   ---------------------------------------------------------- */
-
+/* 03. Overview */
 .vestigia-overview {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    gap: 0;
-
     margin-top: 56px;
     padding: 28px 0;
-
     border-top: 1px solid var(--vestigia-border);
     border-bottom: 1px solid var(--vestigia-border);
 }
@@ -69,231 +83,110 @@
     flex-direction: column-reverse;
     align-items: flex-start;
     justify-content: flex-end;
-
     gap: 14px;
-
     min-width: 0;
     padding: 8px 24px;
-
     background: transparent;
-    border: none;
+    border: 0;
     border-radius: 0;
-
     box-shadow: none;
 }
 
-.vestigia-stat-card:first-child {
-    padding-left: 0;
-}
-
-.vestigia-stat-card:not(:last-child) {
-    border-right: 1px solid var(--vestigia-border);
-}
+.vestigia-stat-card:first-child { padding-left: 0; }
+.vestigia-stat-card:not(:last-child) { border-right: 1px solid var(--vestigia-border); }
 
 .vestigia-stat-label {
+    color: var(--vestigia-muted);
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.01em;
-
-    color: var(--vestigia-muted);
 }
 
 .vestigia-stat-value {
+    color: var(--vestigia-text);
     font-size: clamp(30px, 3vw, 42px);
     font-weight: 500;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     letter-spacing: -0.065em;
-
-    color: var(--vestigia-text);
 }
 
-/* ----------------------------------------------------------
-   04. Analysis results
-   ---------------------------------------------------------- */
-
-.vestigia-issues-section {
-    margin-top: 64px;
-}
-
-.vestigia-issues-section h3 {
-    display: flex;
-    align-items: center;
-
-    margin: 0 0 12px;
-
-    font-size: 20px;
-    font-weight: 550;
-    letter-spacing: -0.035em;
-
-    color: var(--vestigia-text);
-}
-
-/* ----------------------------------------------------------
-   05. Issue list
-   ---------------------------------------------------------- */
-
-/* ----------------------------------------------------------
-   Issue list — Editorial navigation
-   ---------------------------------------------------------- */
-
-.vestigia-dashboard button.vestigia-issue-item {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-
-    width: 100%;
-    min-height: 56px;
-
-    margin: 0;
-    padding: 16px 12px;
-
-    text-align: left;
-
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 400;
-
-    color: var(--text-normal);
-    background: transparent;
-
-    border: none;
-    border-bottom: 1px solid var(--background-modifier-border);
-    border-radius: 0;
-
-    box-shadow: none;
-    cursor: pointer;
-
-    transition:
-        background-color 150ms ease,
-        padding-left 150ms ease;
-}
-
-.vestigia-dashboard button.vestigia-issue-item:first-of-type {
-    border-top: 1px solid var(--background-modifier-border);
-}
-
-.vestigia-dashboard button.vestigia-issue-item:hover {
-    background: var(--background-modifier-hover);
-    padding-left: 20px;
-    box-shadow: none;
-}
-
-.vestigia-dashboard button.vestigia-issue-item:active {
-    background: var(--background-modifier-hover);
-    box-shadow: none;
-}
-
-.vestigia-dashboard button.vestigia-issue-item:focus-visible {
-    outline: 2px solid var(--interactive-accent);
-    outline-offset: -2px;
-}
-
-/* ----------------------------------------------------------
-   06. Responsive
-   ---------------------------------------------------------- */
-
-@media (max-width: 900px) {
-    .vestigia-dashboard {
-        padding: 32px 24px 64px;
-    }
-
-    .vestigia-overview {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        row-gap: 24px;
-    }
-
-    .vestigia-stat-card:nth-child(2) {
-        border-right: none;
-    }
-
-    .vestigia-stat-card:nth-child(3) {
-        padding-left: 0;
-    }
-}
-
-@media (max-width: 500px) {
-    .vestigia-dashboard {
-        padding: 24px 16px 48px;
-    }
-
-    .vestigia-dashboard h2 {
-        font-size: 28px;
-    }
-
-    .vestigia-overview {
-        margin-top: 36px;
-    }
-
-    .vestigia-stat-card {
-        padding: 8px 16px;
-    }
-
-    .vestigia-issues-section {
-        margin-top: 40px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .vestigia-issue-item {
-        transition: none;
-    }
-}
-
-
-/* ----------------------------------------------------------
-   07. Section headings
-   ---------------------------------------------------------- */
-
-.vestigia-section-header {
-    margin-bottom: 28px;
-}
+/* 04. Analysis section headings */
+.vestigia-issues-section { margin-top: 64px; }
+.vestigia-section-header { margin-bottom: 28px; }
 
 .vestigia-section-eyebrow {
     display: block;
-
     margin-bottom: 18px;
-
+    color: var(--vestigia-violet);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.12em;
-
-    color: var(--text-muted);
 }
 
 .vestigia-section-title-row {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-
     gap: 16px;
 }
 
-.vestigia-section-title-row h3 {
+.vestigia-dashboard .vestigia-issues-section h3 {
     margin: 0;
-
+    color: var(--vestigia-text);
     font-size: 22px;
     font-weight: 550;
     letter-spacing: -0.04em;
+    line-height: 1.25;
 }
 
 .vestigia-issue-count {
+    color: var(--vestigia-violet);
     font-size: 13px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-
-    color: var(--text-muted);
 }
 
 .vestigia-section-description {
     margin: 8px 0 0;
-
+    color: var(--vestigia-muted);
     font-size: 12px;
     line-height: 1.6;
-
-    color: var(--text-muted);
 }
 
-/* Issue content */
+/* 05. TRACES — Orphan notes */
+.vestigia-dashboard button.vestigia-issue-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 56px;
+    height: auto;
+    margin: 0;
+    padding: 16px 12px;
+    color: var(--vestigia-text);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--vestigia-border);
+    border-radius: 0;
+    box-shadow: none;
+    text-align: left;
+    white-space: normal;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 150ms ease, padding-left 150ms ease;
+}
+
+.vestigia-dashboard button.vestigia-issue-item:first-of-type {
+    border-top: 1px solid var(--vestigia-border);
+}
+
+.vestigia-dashboard button.vestigia-issue-item:hover {
+    padding-left: 20px;
+    background: var(--vestigia-hover);
+    box-shadow: none;
+}
 
 .vestigia-issue-content {
     display: flex;
@@ -304,161 +197,280 @@
 }
 
 .vestigia-issue-name {
+    color: var(--vestigia-text);
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-normal);
 }
 
 .vestigia-issue-path {
+    color: var(--vestigia-muted);
     font-size: 11px;
-    color: var(--text-muted);
     overflow-wrap: anywhere;
 }
 
-/* FRACTURES */
-
+/* 06. FRACTURES — Grouped references */
 .vestigia-fractures-group {
-    border-top: 1px solid var(--background-modifier-border);
     padding: 20px 12px;
+    border-top: 1px solid var(--vestigia-border);
 }
 
 .vestigia-fractures-group-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     margin-bottom: 16px;
 }
 
 .vestigia-fractures-source {
+    min-width: 0;
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.04em;
-}
-
-.vestigia-fractures-group-count {
-    color: var(--text-muted);
-    font-size: 12px;
-}
-
-.vestigia-fractures-item {
-    display: flex;
-    gap: 14px;
-    padding: 9px 0;
-}
-
-.vestigia-fractures-indicator {
- 	width: 6px;
-    height: 6px;
-    margin-top: 6px;
-
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.vestigia-severity-info {
-    background-color: #829DB8;
-}
-
-.vestigia-severity-warning {
-    background-color: #C79565;
-}
-
-.vestigia-fractures-item-content {
-   display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-
-    flex: 1;
-    min-width: 0;
-
-    gap: 5px;
-}
-
-.vestigia-fractures-item-type {
-	display: block;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.4;
-}
-
-.vestigia-fractures-item-target {
-	display: block;
-    font-size: 12px;
-    line-height: 1.5;
-
-    color: var(--text-muted);
     overflow-wrap: anywhere;
 }
 
-.vestigia-fractures-item-severity {
-	display: block;
-    font-size: 10px;
-    line-height: 1.4;
-
-    color: var(--text-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.vestigia-fractures-empty {
-    padding: 28px 12px;
-    border-top: 1px solid var(--background-modifier-border);
-}
-
-.vestigia-fractures-empty-title {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    color: #7EAA9B;
-}
-
-.vestigia-fractures-empty p {
+.vestigia-fractures-group-count {
+    flex-shrink: 0;
+    color: var(--vestigia-muted);
     font-size: 12px;
-    color: var(--text-muted);
-    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
 }
-
-/* FRACTURES — Interactive references */
 
 .vestigia-dashboard button.vestigia-fractures-item {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     justify-content: flex-start;
-
+    gap: 14px;
     width: 100%;
     height: auto;
     min-height: 0;
-
-    gap: 14px;
+    margin: 0;
     padding: 12px;
-
-    border: none;
+    color: var(--vestigia-text);
+    background: transparent;
+    border: 0;
     border-radius: 0;
     box-shadow: none;
-
-    background: transparent;
-    color: var(--text-normal);
-
     text-align: left;
     white-space: normal;
     line-height: normal;
-
+    font-family: inherit;
     cursor: pointer;
     transition: background-color 150ms ease;
 }
 
 .vestigia-dashboard button.vestigia-fractures-item:hover {
-    background: var(--background-modifier-hover);
+    background: var(--vestigia-hover);
     box-shadow: none;
 }
 
+/* Vertical neon markers: color is reserved for the bar. */
+.vestigia-fractures-indicator {
+    display: block;
+    flex: 0 0 4px;
+    width: 4px;
+    height: 34px;
+    margin-top: 2px;
+    border-radius: 2px;
+}
+
+.vestigia-dashboard .vestigia-severity-info { background-color: var(--vestigia-info); }
+.vestigia-dashboard .vestigia-severity-warning { background-color: var(--vestigia-warning); }
+.vestigia-dashboard .vestigia-severity-error { background-color: var(--vestigia-danger); }
+
+.vestigia-fractures-item-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    min-width: 0;
+}
+
+.vestigia-fractures-item-type {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.vestigia-fractures-item-target {
+    display: block;
+    color: var(--vestigia-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.vestigia-fractures-item-severity {
+    display: block;
+    color: var(--text-faint);
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* 07. Healthy state */
+.vestigia-fractures-empty {
+    padding: 28px 12px;
+    border-top: 1px solid var(--vestigia-border);
+}
+
+.vestigia-fractures-empty-title {
+    color: var(--vestigia-success);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+.vestigia-fractures-empty p {
+    margin: 8px 0 0;
+    color: var(--vestigia-muted);
+    font-size: 12px;
+}
+
+/* 08. Shared interaction and accessibility */
+.vestigia-dashboard button.vestigia-issue-item:focus-visible,
 .vestigia-dashboard button.vestigia-fractures-item:focus-visible {
-    outline: 1px solid var(--interactive-accent);
-    outline-offset: -1px;
+    outline: 2px solid var(--vestigia-focus);
+    outline-offset: -2px;
 }
 
+.vestigia-dashboard button.vestigia-issue-item:active,
 .vestigia-dashboard button.vestigia-fractures-item:active {
-    background: var(--background-modifier-hover);
+    background: var(--vestigia-hover);
     box-shadow: none;
+}
+
+/* 09. Responsive */
+@media (max-width: 900px) {
+    .vestigia-dashboard { padding: 32px 24px 64px; }
+    .vestigia-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        row-gap: 24px;
+    }
+    .vestigia-stat-card:nth-child(2) { border-right: 0; }
+    .vestigia-stat-card:nth-child(3) { padding-left: 0; }
+}
+
+@media (max-width: 500px) {
+    .vestigia-dashboard { padding: 24px 16px 48px; }
+    .vestigia-dashboard h2 { font-size: 28px; }
+    .vestigia-overview { margin-top: 36px; }
+    .vestigia-stat-card { padding: 8px 16px; }
+    .vestigia-issues-section { margin-top: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vestigia-dashboard button.vestigia-issue-item,
+    .vestigia-dashboard button.vestigia-fractures-item {
+        transition: none;
+    }
+}
+
+/* =========================================
+   VESTIGIA — DASHBOARD HEADER
+   ========================================= */
+
+.vestigia-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.vestigia-branding {
+    min-width: 0;
+}
+
+.vestigia-logo-dot {
+    color: var(--vestigia-violet, #7F3AED);
+}
+
+/* =========================================
+   VESTIGIA — SCAN BUTTON
+   ========================================= */
+
+.vestigia-dashboard button.vestigia-scan-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    flex-shrink: 0;
+
+    width: auto;
+    height: auto;
+    min-height: 36px;
+
+    padding: 8px 12px;
+
+    background: transparent;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 0;
+    box-shadow: none;
+
+    color: var(--text-muted);
+
+    font-size: 12px;
+    font-weight: 500;
+
+    cursor: pointer;
+    transition:
+        color 150ms ease,
+        border-color 150ms ease;
+}
+
+.vestigia-dashboard button.vestigia-scan-button:hover:not(:disabled) {
+    color: var(--vestigia-violet, #7F3AED);
+    border-color: var(--vestigia-violet, #7F3AED);
+    background: transparent;
+    box-shadow: none;
+}
+
+.vestigia-dashboard button.vestigia-scan-button:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
+.vestigia-dashboard button.vestigia-scan-button:focus-visible {
+    outline: 2px solid var(--vestigia-violet, #7F3AED);
+    outline-offset: 3px;
+}
+
+.vestigia-scan-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vestigia-scan-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.vestigia-scan-button.is-scanning .vestigia-scan-icon {
+    animation: vestigia-scan-rotate 1.2s linear infinite;
+}
+
+@keyframes vestigia-scan-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vestigia-scan-button.is-scanning .vestigia-scan-icon {
+        animation: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .vestigia-topbar {
+        flex-direction: column;
+        gap: 16px;
+    }
 }
