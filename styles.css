@@ -347,9 +347,10 @@
 }
 
 .vestigia-fractures-indicator {
-    width: 6px;
+ 	width: 6px;
     height: 6px;
-    margin-top: 7px;
+    margin-top: 6px;
+
     border-radius: 50%;
     flex-shrink: 0;
 }
@@ -363,25 +364,37 @@
 }
 
 .vestigia-fractures-item-content {
-    display: flex;
+   display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: flex-start;
+
+    flex: 1;
     min-width: 0;
+
+    gap: 5px;
 }
 
 .vestigia-fractures-item-type {
+	display: block;
     font-size: 13px;
     font-weight: 500;
+    line-height: 1.4;
 }
 
 .vestigia-fractures-item-target {
+	display: block;
     font-size: 12px;
+    line-height: 1.5;
+
     color: var(--text-muted);
     overflow-wrap: anywhere;
 }
 
 .vestigia-fractures-item-severity {
+	display: block;
     font-size: 10px;
+    line-height: 1.4;
+
     color: var(--text-faint);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -403,4 +416,49 @@
     font-size: 12px;
     color: var(--text-muted);
     margin-top: 8px;
+}
+
+/* FRACTURES — Interactive references */
+
+.vestigia-dashboard button.vestigia-fractures-item {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+    width: 100%;
+    height: auto;
+    min-height: 0;
+
+    gap: 14px;
+    padding: 12px;
+
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    background: transparent;
+    color: var(--text-normal);
+
+    text-align: left;
+    white-space: normal;
+    line-height: normal;
+
+    cursor: pointer;
+    transition: background-color 150ms ease;
+}
+
+.vestigia-dashboard button.vestigia-fractures-item:hover {
+    background: var(--background-modifier-hover);
+    box-shadow: none;
+}
+
+.vestigia-dashboard button.vestigia-fractures-item:focus-visible {
+    outline: 1px solid var(--interactive-accent);
+    outline-offset: -1px;
+}
+
+.vestigia-dashboard button.vestigia-fractures-item:active {
+    background: var(--background-modifier-hover);
+    box-shadow: none;
 }

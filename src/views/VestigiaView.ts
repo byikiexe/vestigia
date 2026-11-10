@@ -1,14 +1,8 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, Notice, TFile, WorkspaceLeaf, } from "obsidian";
 import type { VaultStatisticsService } from "../core/VaultStatisticsService";
 import { AnalysisService } from "../core/AnalysisService";
-import type {
-	AnalysisIssue,
-	AnalysisResult,
-} from "../core/AnalysisResult";
-
-import type {
-	BrokenReferenceType,
-} from "../core/BrokenReference";
+import type { AnalysisIssue, AnalysisResult, } from "../core/AnalysisResult";
+import type { BrokenReferenceType, } from "../core/BrokenReference";
 
 export const VIEW_TYPE_VESTIGIA = "vestigia-dashboard";
 
@@ -295,47 +289,131 @@ export class VestigiaView extends ItemView {
 	}
 
 	private renderBrokenReferenceItem(
-    container: HTMLElement,
-    issue: AnalysisIssue
-): void {
-    const type = issue.ruleId as BrokenReferenceType;
+		container: HTMLElement,
+		issue: AnalysisIssue
+	): void {
+		const type = issue.ruleId as BrokenReferenceType;
 
-    const labels: Record<BrokenReferenceType, string> = {
-        "missing-note": "Missing note",
-        "missing-attachment": "Missing attachment",
-        "missing-heading": "Missing heading",
-        "missing-block": "Missing block",
-    };
+		const labels: Record<BrokenReferenceType, string> = {
+			"missing-note": "Missing note",
+			"missing-attachment": "Missing attachment",
+			"missing-heading": "Missing heading",
+			"missing-block": "Missing block",
+		};
 
-    const item = container.createDiv({
-        cls: "vestigia-fractures-item",
-    });
+		const item = container.createEl("button", {
+			cls: "vestigia-fractures-item",
+			attr: {
+				type: "button",
+				"aria-label": `Open source for ${String(
+					issue.metadata?.target ?? issue.message
+				)}`,
+			},
+		});
 
-    const indicator = item.createSpan({
-        cls: `vestigia-fractures-indicator vestigia-severity-${issue.severity}`,
-    });
+		const indicator = item.createSpan({
+			cls: `vestigia-fractures-indicator vestigia-severity-${issue.severity}`,
+		});
 
-    indicator.setAttribute("aria-hidden", "true");
+		indicator.setAttribute("aria-hidden", "true");
 
-    const content = item.createDiv({
-        cls: "vestigia-fractures-item-content",
-    });
+		const content = item.createDiv({
+			cls: "vestigia-fractures-item-content",
+		});
 
-    content.createEl("span", {
-        text: labels[type] ?? "Broken reference",
-        cls: "vestigia-fractures-item-type",
-    });
+		content.createEl("span", {
+			text: labels[type] ?? "Broken reference",
+			cls: "vestigia-fractures-item-type",
+		});
 
-    content.createEl("span", {
-        text: String(issue.metadata?.target ?? issue.message),
-        cls: "vestigia-fractures-item-target",
-    });
+		content.createEl("span", {
+			text: String(
+				issue.metadata?.target ?? issue.message
+			),
+			cls: "vestigia-fractures-item-target",
+		});
 
-    content.createEl("span", {
-        text: issue.severity === "info"
-            ? "Informational"
-            : "Warning",
-        cls: "vestigia-fractures-item-severity",
-    });
-}
+		content.createEl("span", {
+			text:
+				issue.severity === "info"
+					? "Informational"
+					: "Warning",
+			cls: "vestigia-fractures-item-severity",
+		});
+
+		item.addEventListener("click", () => {
+			void this.navigateToReference(issue);
+		});
+	}
+
+	private async navigateToReference(
+		issue: AnalysisIssue
+	): Promise<void> {
+		const sourcePath = issue.filePath;
+
+		if (!sourcePath) {
+			new Notice("Source file not available.");
+			return;
+		}
+
+		const source = this.app.vault.getAbstractFileByPath(
+			sourcePath
+		);
+
+		if (!(source instanceof TFile)) {
+			new Notice("Source file no longer exists.");
+			return;
+		}
+
+		try {
+			const leaf = this.app.workspace.getLeaf("tab");
+
+			await leaf.openFile(source, {
+				active: true,
+			});
+
+			const position = issue.metadata?.position;
+
+			if (
+				position &&
+				typeof position === "object" &&
+				"line" in position &&
+				"column" in position &&
+				typeof position.line === "number" &&
+				typeof position.column === "number"
+			) {
+				const editor = this.app.workspace.activeEditor?.editor;
+
+				if (editor) {
+					editor.setCursor({
+						line: position.line,
+						ch: position.column,
+					});
+
+					editor.scrollIntoView(
+						{
+							from: {
+								line: position.line,
+								ch: position.column,
+							},
+							to: {
+								line: position.line,
+								ch: position.column,
+							},
+						},
+						true
+					);
+
+					editor.focus();
+				}
+			}
+		} catch (error) {
+			console.error(
+				"[Vestigia] Failed to navigate to reference:",
+				error
+			);
+
+			new Notice("Unable to open the source note.");
+		}
+	}
 }
