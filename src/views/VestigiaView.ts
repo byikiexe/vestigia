@@ -42,6 +42,10 @@ export class VestigiaView extends ItemView {
 	private lastStatistics: VaultStatistics | null = null;
 	private lastResults: AnalysisResult[] = [];
 
+	private readonly pageSize = 25;
+
+	private orphanPage = 0;
+	private fracturePage = 0;
 
 	getViewType(): string {
 		return VIEW_TYPE_VESTIGIA;
@@ -156,7 +160,7 @@ export class VestigiaView extends ItemView {
 
 	private async scanVault(): Promise<void> {
 		if (this.isScanning) return;
-
+		const scanStart = performance.now();
 		this.isScanning = true;
 
 		const generation = ++this.scanGeneration;
@@ -184,7 +188,15 @@ export class VestigiaView extends ItemView {
 			this.lastStatistics = statistics;
 			this.lastResults = results;
 
+			this.orphanPage = 0;
+			this.fracturePage = 0;
+
 			this.updateDashboard(statistics, results);
+
+			console.log(
+				`[Vestigia] Scan + render: ${(performance.now() - scanStart).toFixed(2)
+				} ms`
+			);
 
 			this.setScanStatus("complete");
 
@@ -246,6 +258,70 @@ export class VestigiaView extends ItemView {
 
 		this.contentEl.empty();
 	}
+	private renderPagination(
+		container: HTMLElement,
+		currentPage: number,
+		totalItems: number,
+		onPageChange: (page: number) => void
+	): void {
+		const totalPages = Math.ceil(totalItems / this.pageSize);
+
+		if (totalPages <= 1) return;
+
+		const pagination = container.createDiv({
+			cls: "vestigia-pagination",
+		});
+
+		const start = currentPage * this.pageSize + 1;
+		const end = Math.min(
+			(currentPage + 1) * this.pageSize,
+			totalItems
+		);
+
+		pagination.createSpan({
+			text: `${String(start).padStart(2, "0")}–${String(end).padStart(2, "0")} / ${totalItems}`,
+			cls: "vestigia-pagination-summary",
+		});
+
+		const controls = pagination.createDiv({
+			cls: "vestigia-pagination-controls",
+		});
+
+		const previous = controls.createEl("button", {
+			text: "← Prev",
+			cls: "vestigia-pagination-button",
+			attr: {
+				type: "button",
+				"aria-label": "Previous page",
+			},
+		});
+
+		previous.disabled = currentPage === 0;
+
+		previous.addEventListener("click", () => {
+			onPageChange(currentPage - 1);
+		});
+
+		controls.createSpan({
+			text: `${String(currentPage + 1).padStart(3, "0")} / ${String(totalPages).padStart(3, "0")}`,
+			cls: "vestigia-pagination-current",
+		});
+
+		const next = controls.createEl("button", {
+			text: "Next →",
+			cls: "vestigia-pagination-button",
+			attr: {
+				type: "button",
+				"aria-label": "Next page",
+			},
+		});
+
+		next.disabled = currentPage >= totalPages - 1;
+
+		next.addEventListener("click", () => {
+			onPageChange(currentPage + 1);
+		});
+	}
 
 	private renderOrphanNotes(
 		container: HTMLElement,
@@ -282,7 +358,28 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-section-description",
 		});
 
-		for (const issue of orphanResult.issues) {
+		const issues = orphanResult.issues.filter(
+			(issue) => Boolean(issue.filePath)
+		);
+
+		const totalPages = Math.max(
+			1,
+			Math.ceil(issues.length / this.pageSize)
+		);
+
+		this.orphanPage = Math.min(
+			this.orphanPage,
+			totalPages - 1
+		);
+
+		const start = this.orphanPage * this.pageSize;
+
+		const pageIssues = issues.slice(
+			start,
+			start + this.pageSize
+		);
+
+		for (const issue of pageIssues) {
 			if (!issue.filePath) continue;
 
 			const filePath = issue.filePath;
@@ -320,11 +417,21 @@ export class VestigiaView extends ItemView {
 				);
 			});
 		}
+		this.renderPagination(
+			section,
+			this.orphanPage,
+			issues.length,
+			(page) => {
+				this.orphanPage = page;
+				this.refreshDashboard();
+			}
+		);
 	}
 	private updateDashboard(
 		statistics: VaultStatistics,
 		results: AnalysisResult[]
 	): void {
+		const renderStart = performance.now();
 		if (!this.overviewContainer || !this.analysisContainer) {
 			return;
 		}
@@ -403,6 +510,11 @@ export class VestigiaView extends ItemView {
 				ignoredIssues
 			);
 		}
+
+		console.log(
+			`[Vestigia] Dashboard render: ${(performance.now() - renderStart).toFixed(2)
+			} ms`
+		);
 	}
 
 	private renderBrokenReferences(
@@ -477,13 +589,41 @@ export class VestigiaView extends ItemView {
 			});
 		}
 
+		// Only paginate issues with a valid source file.
+		const issues = result.issues.filter(
+			(issue) => Boolean(issue.filePath)
+		);
+
+		// Calculate the number of pages.
+		const totalPages = Math.max(
+			1,
+			Math.ceil(issues.length / this.pageSize)
+		);
+
+		// Keep the current page within valid boundaries.
+		this.fracturePage = Math.min(
+			this.fracturePage,
+			totalPages - 1
+		);
+
+		// Select the issues for the current page.
+		const start = this.fracturePage * this.pageSize;
+
+		const pageIssues = issues.slice(
+			start,
+			start + this.pageSize
+		);
+
+		// Group only the issues belonging to the current page.
 		const groups = new Map<string, AnalysisIssue[]>();
 
-		for (const issue of result.issues) {
+		for (const issue of pageIssues) {
 			if (!issue.filePath) continue;
 
 			const group = groups.get(issue.filePath) ?? [];
+
 			group.push(issue);
+
 			groups.set(issue.filePath, group);
 		}
 
@@ -510,6 +650,16 @@ export class VestigiaView extends ItemView {
 				this.renderBrokenReferenceItem(group, issue);
 			}
 		}
+
+		this.renderPagination(
+			section,
+			this.fracturePage,
+			issues.length,
+			(page) => {
+				this.fracturePage = page;
+				this.refreshDashboard();
+			}
+		);
 
 		// Render ignored references when expanded
 		if (this.showIgnored && ignoredIssues.length > 0) {
@@ -705,6 +855,8 @@ export class VestigiaView extends ItemView {
 		}
 	}
 
+
+
 	private renderIgnoredReferences(
 		container: HTMLElement,
 		issues: AnalysisIssue[]
@@ -756,6 +908,7 @@ export class VestigiaView extends ItemView {
 			}
 		}
 	}
+
 
 	private renderIgnoredReferenceItem(
 		container: HTMLElement,
@@ -852,12 +1005,12 @@ export class VestigiaView extends ItemView {
 	}
 
 	private refreshDashboard(): void {
-    if (!this.lastStatistics) return;
+		if (!this.lastStatistics) return;
 
-    this.updateDashboard(
-        this.lastStatistics,
-        this.lastResults
-    );
-}
+		this.updateDashboard(
+			this.lastStatistics,
+			this.lastResults
+		);
+	}
 
 }
