@@ -24,6 +24,12 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 		const startTime = performance.now();
 		const issues: AnalysisIssue[] = [];
 
+		let totalNoteReferences = 0;
+		let brokenNoteReferences = 0;
+
+		let totalAttachmentReferences = 0;
+		let brokenAttachmentReferences = 0;
+
 		for (const source of app.vault.getMarkdownFiles()) {
 			const cache = app.metadataCache.getFileCache(source);
 
@@ -36,6 +42,20 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 			];
 
 			for (const link of links) {
+				const target = link.link;
+
+				if (!target) continue;
+
+				const [linkPath] = this.splitLink(target);
+
+				const isAttachment = this.isAttachment(linkPath);
+
+				if (isAttachment) {
+					totalAttachmentReferences++;
+				} else {
+					totalNoteReferences++;
+				}
+
 				const reference = this.inspectLink(
 					app,
 					source,
@@ -43,6 +63,12 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 				);
 
 				if (!reference) continue;
+
+				if (isAttachment) {
+					brokenAttachmentReferences++;
+				} else {
+					brokenNoteReferences++;
+				}
 
 				issues.push({
 					id: reference.id,
@@ -58,11 +84,25 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 				});
 			}
 		}
+		
+		console.log("[Vestigia] Reference metrics", {
+			totalNoteReferences,
+			brokenNoteReferences,
+			totalAttachmentReferences,
+			brokenAttachmentReferences,
+		});
 
 		return {
 			analyzerId: this.id,
 			issues,
 			durationMs: performance.now() - startTime,
+
+			metrics: {
+				totalNoteReferences,
+				brokenNoteReferences,
+				totalAttachmentReferences,
+				brokenAttachmentReferences,
+			},
 		};
 	}
 

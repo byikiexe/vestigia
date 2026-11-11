@@ -13,4 +13,14 @@ export interface AnalysisResult {
     analyzerId: string;
     issues: AnalysisIssue[];
     durationMs: number;
+
+    metrics?: AnalysisMetrics;
+}
+
+export interface AnalysisMetrics {
+    totalNoteReferences?: number;
+    brokenNoteReferences?: number;
+
+    totalAttachmentReferences?: number;
+    brokenAttachmentReferences?: number;
 }

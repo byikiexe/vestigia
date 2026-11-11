@@ -4,6 +4,8 @@ import { AnalysisService } from "../core/AnalysisService";
 import type { AnalysisIssue, AnalysisResult, } from "../core/AnalysisResult";
 import type { BrokenReferenceType, } from "../core/BrokenReference";
 import type { VaultStatistics } from "../core/VaultStatistics";
+import { VaultHealthService } from "../core/VaultHealthService";
+import type { VaultHealth } from "../core/VaultHealth";
 
 
 export const VIEW_TYPE_VESTIGIA = "vestigia-dashboard";
@@ -32,6 +34,7 @@ export class VestigiaView extends ItemView {
 
 	private scanButton: HTMLButtonElement | null = null;
 	private overviewContainer: HTMLElement | null = null;
+	private healthContainer: HTMLElement | null = null;
 	private analysisContainer: HTMLElement | null = null;
 
 	private isScanning = false;
@@ -46,6 +49,10 @@ export class VestigiaView extends ItemView {
 
 	private orphanPage = 0;
 	private fracturePage = 0;
+
+	private readonly healthService = new VaultHealthService();
+
+	private lastHealth: VaultHealth | null = null;
 
 	getViewType(): string {
 		return VIEW_TYPE_VESTIGIA;
@@ -109,6 +116,10 @@ export class VestigiaView extends ItemView {
 		this.setScanStatus("idle");
 
 		// Containers
+		this.healthContainer = container.createDiv({
+			cls: "vestigia-health",
+		});
+
 		this.overviewContainer = container.createDiv({
 			cls: "vestigia-overview",
 		});
@@ -176,6 +187,13 @@ export class VestigiaView extends ItemView {
 			const statistics = this.statisticsService.collect();
 
 			const results = await this.analysisService.run();
+
+			const health = this.healthService.calculate(
+				statistics,
+				results
+			);
+
+			this.lastHealth = health;
 
 			// Ignore results from a closed or replaced view.
 			if (
@@ -255,9 +273,10 @@ export class VestigiaView extends ItemView {
 		this.scanButton = null;
 		this.overviewContainer = null;
 		this.analysisContainer = null;
-
 		this.contentEl.empty();
+		this.healthContainer = null;
 	}
+
 	private renderPagination(
 		container: HTMLElement,
 		currentPage: number,
@@ -427,13 +446,145 @@ export class VestigiaView extends ItemView {
 			}
 		);
 	}
+
+	private renderVaultHealth(
+		container: HTMLElement,
+		health: VaultHealth
+	): void {
+		container.empty();
+
+		const section = container.createDiv({
+			cls: "vestigia-health-section",
+		});
+
+		// Section heading
+		const header = section.createDiv({
+			cls: "vestigia-health-header",
+		});
+
+		header.createSpan({
+			text: "01 / VAULT HEALTH",
+			cls: "vestigia-section-eyebrow",
+		});
+
+		// Main score
+		const scoreContainer = section.createDiv({
+			cls: "vestigia-health-score-container",
+		});
+
+		const score = health.score;
+
+		scoreContainer.createEl("strong", {
+			text: score === null
+				? "N/A"
+				: `${score.toFixed(1)}%`,
+			cls: "vestigia-health-score",
+		});
+
+		scoreContainer.createSpan({
+			text: "Structural health",
+			cls: "vestigia-health-label",
+		});
+
+		// Contextual description
+		const description =
+			score === null
+				? "Not enough data to evaluate structural health."
+				: score >= 90
+					? "Your vault has a strong structural foundation."
+					: score >= 70
+						? "Your vault has some structural inconsistencies."
+						: "Your vault contains structural areas worth reviewing.";
+
+		section.createEl("p", {
+			text: description,
+			cls: "vestigia-health-description",
+		});
+
+		// Main progress bar
+		const progress = section.createDiv({
+			cls: "vestigia-health-progress",
+		});
+
+		progress.setAttribute("role", "progressbar");
+		progress.setAttribute("aria-label", "Vault structural health");
+
+		if (score !== null) {
+			progress.setAttribute("aria-valuenow", score.toFixed(1));
+			progress.setAttribute("aria-valuemin", "0");
+			progress.setAttribute("aria-valuemax", "100");
+		} else {
+			progress.setAttribute("aria-valuetext", "Not available");
+		}
+
+		const progressFill = progress.createDiv({
+			cls: "vestigia-health-progress-fill",
+		});
+
+		progressFill.style.width =
+			score === null ? "0%" : `${score}%`;
+
+		// Individual dimensions
+		const dimensions = section.createDiv({
+			cls: "vestigia-health-dimensions",
+		});
+
+		const items = [
+			{
+				label: "Reference integrity",
+				dimension: health.referenceIntegrity,
+			},
+			{
+				label: "Note connectivity",
+				dimension: health.noteConnectivity,
+			},
+			{
+				label: "Attachment integrity",
+				dimension: health.attachmentIntegrity,
+			},
+		];
+
+		for (const item of items) {
+			const row = dimensions.createDiv({
+				cls: "vestigia-health-dimension",
+			});
+
+			row.createSpan({
+				text: item.label,
+				cls: "vestigia-health-dimension-label",
+			});
+
+			row.createSpan({
+				text: item.dimension.score === null
+					? "N/A"
+					: `${item.dimension.score.toFixed(2)}%`,
+				cls: "vestigia-health-dimension-value",
+			});
+		}
+	}
+
 	private updateDashboard(
 		statistics: VaultStatistics,
 		results: AnalysisResult[]
 	): void {
 		const renderStart = performance.now();
-		if (!this.overviewContainer || !this.analysisContainer) {
+
+		if (
+			!this.healthContainer ||
+			!this.overviewContainer ||
+			!this.analysisContainer
+		) {
 			return;
+		}
+
+		// Update vault health
+		if (this.lastHealth) {
+			this.renderVaultHealth(
+				this.healthContainer,
+				this.lastHealth
+			);
+		} else {
+			this.healthContainer.empty();
 		}
 
 		// Update statistics
