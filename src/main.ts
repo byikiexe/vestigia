@@ -16,23 +16,32 @@ export default class VestigiaPlugin extends Plugin {
 
 
 	private async loadSettings(): Promise<void> {
-		const savedData = await this.loadData();
+		const savedData: unknown = await this.loadData();
 
-		const ignoredReferences = Array.isArray(
-			savedData?.ignoredReferences
-		)
-			? savedData.ignoredReferences.filter(
-				(reference: unknown) =>
-					typeof reference === "object" &&
-					reference !== null &&
-					"sourcePath" in reference &&
-					"target" in reference &&
-					typeof reference.sourcePath === "string" &&
-					typeof reference.target === "string"
-			)
-			: [];
+		let ignoredReferences: VestigiaSettings["ignoredReferences"] = [];
+
+		if (
+			typeof savedData === "object" &&
+			savedData !== null &&
+			"ignoredReferences" in savedData &&
+			Array.isArray(savedData.ignoredReferences)
+		) {
+			ignoredReferences = (savedData.ignoredReferences as unknown[])
+				.filter(
+					(
+						reference
+					): reference is VestigiaSettings["ignoredReferences"][number] =>
+						typeof reference === "object" &&
+						reference !== null &&
+						"sourcePath" in reference &&
+						"target" in reference &&
+						typeof reference.sourcePath === "string" &&
+						typeof reference.target === "string"
+				);
+		}
 
 		this.settings = {
+			...DEFAULT_SETTINGS,
 			ignoredReferences,
 		};
 
@@ -51,11 +60,8 @@ export default class VestigiaPlugin extends Plugin {
 			this.saveData(snapshot)
 		);
 
-		this.saveQueue = save.catch((error: unknown) => {
-			console.error(
-				"[Vestigia] Failed to save settings:",
-				error
-			);
+		this.saveQueue = save.catch(() => {
+			// Keep the queue operational after a failed save.
 		});
 
 		await save;
@@ -107,7 +113,7 @@ export default class VestigiaPlugin extends Plugin {
 				)
 		);
 
-		this.addRibbonIcon("fingerprint-pattern", "Open Vestigia", () => {
+		this.addRibbonIcon("fingerprint-pattern", "Open vestigia", () => {
 			void this.activateView();
 		});
 
@@ -140,9 +146,6 @@ export default class VestigiaPlugin extends Plugin {
 		await workspace.revealLeaf(leaf);
 	}
 
-	onunload(): void {
-		console.log("[Vestigia] Plugin unloaded");
-	}
 
 	async ignoreReference(
 		sourcePath: string,

@@ -39,7 +39,7 @@ export class VestigiaView extends ItemView {
 
 	private isScanning = false;
 	private scanGeneration = 0;
-	private scanStatusTimeout: ReturnType<typeof setTimeout> | null = null;
+	private scanStatusTimeout: number | null = null;
 
 	private showIgnored = false;
 	private lastStatistics: VaultStatistics | null = null;
@@ -171,13 +171,12 @@ export class VestigiaView extends ItemView {
 
 	private async scanVault(): Promise<void> {
 		if (this.isScanning) return;
-		const scanStart = performance.now();
 		this.isScanning = true;
 
 		const generation = ++this.scanGeneration;
 
 		if (this.scanStatusTimeout !== null) {
-			clearTimeout(this.scanStatusTimeout);
+			window.clearTimeout(this.scanStatusTimeout);
 			this.scanStatusTimeout = null;
 		}
 
@@ -211,11 +210,6 @@ export class VestigiaView extends ItemView {
 
 			this.updateDashboard(statistics, results);
 
-			console.log(
-				`[Vestigia] Scan + render: ${(performance.now() - scanStart).toFixed(2)
-				} ms`
-			);
-
 			this.setScanStatus("complete");
 
 		} catch (error) {
@@ -230,7 +224,7 @@ export class VestigiaView extends ItemView {
 			if (generation === this.scanGeneration) {
 				this.isScanning = false;
 
-				this.scanStatusTimeout = setTimeout(() => {
+				this.scanStatusTimeout = window.setTimeout(() => {
 					if (generation === this.scanGeneration) {
 						this.setScanStatus("idle");
 					}
@@ -249,7 +243,7 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-stat-card",
 		});
 
-		card.createEl("span", {
+		card.createSpan({
 			text: label,
 			cls: "vestigia-stat-label",
 		});
@@ -266,7 +260,7 @@ export class VestigiaView extends ItemView {
 		this.isScanning = false;
 
 		if (this.scanStatusTimeout !== null) {
-			clearTimeout(this.scanStatusTimeout);
+			window.clearTimeout(this.scanStatusTimeout);
 			this.scanStatusTimeout = null;
 		}
 
@@ -307,7 +301,7 @@ export class VestigiaView extends ItemView {
 		});
 
 		const previous = controls.createEl("button", {
-			text: "← Prev",
+			text: "Prev",
 			cls: "vestigia-pagination-button",
 			attr: {
 				type: "button",
@@ -327,7 +321,7 @@ export class VestigiaView extends ItemView {
 		});
 
 		const next = controls.createEl("button", {
-			text: "Next →",
+			text: "Next",
 			cls: "vestigia-pagination-button",
 			attr: {
 				type: "button",
@@ -354,7 +348,7 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-section-header",
 		});
 
-		sectionHeader.createEl("span", {
+		sectionHeader.createSpan({
 			text: "02 / TRACES",
 			cls: "vestigia-section-eyebrow",
 		});
@@ -367,7 +361,7 @@ export class VestigiaView extends ItemView {
 			text: "Orphan notes",
 		});
 
-		titleRow.createEl("span", {
+		titleRow.createSpan({
 			text: String(orphanResult.issues.length).padStart(2, "0"),
 			cls: "vestigia-issue-count",
 		});
@@ -418,12 +412,12 @@ export class VestigiaView extends ItemView {
 				cls: "vestigia-issue-content",
 			});
 
-			content.createEl("span", {
+			content.createSpan({
 				text: displayName,
 				cls: "vestigia-issue-name",
 			});
 
-			content.createEl("span", {
+			content.createSpan({
 				text: filePath,
 				cls: "vestigia-issue-path",
 			});
@@ -567,7 +561,6 @@ export class VestigiaView extends ItemView {
 		statistics: VaultStatistics,
 		results: AnalysisResult[]
 	): void {
-		const renderStart = performance.now();
 
 		if (
 			!this.healthContainer ||
@@ -661,11 +654,6 @@ export class VestigiaView extends ItemView {
 				ignoredIssues
 			);
 		}
-
-		console.log(
-			`[Vestigia] Dashboard render: ${(performance.now() - renderStart).toFixed(2)
-			} ms`
-		);
 	}
 
 	private renderBrokenReferences(
@@ -681,7 +669,7 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-section-header",
 		});
 
-		header.createEl("span", {
+		header.createSpan({
 			text: "03 / FRACTURES",
 			cls: "vestigia-section-eyebrow",
 		});
@@ -694,7 +682,7 @@ export class VestigiaView extends ItemView {
 			text: "Broken references",
 		});
 
-		titleRow.createEl("span", {
+		titleRow.createSpan({
 			text: String(result.issues.length).padStart(2, "0"),
 			cls: "vestigia-issue-count",
 		});
@@ -730,7 +718,7 @@ export class VestigiaView extends ItemView {
 				cls: "vestigia-fractures-empty",
 			});
 
-			emptyState.createEl("span", {
+			emptyState.createSpan({
 				text: "NO ACTIVE BROKEN REFERENCES",
 				cls: "vestigia-fractures-empty-title",
 			});
@@ -787,12 +775,12 @@ export class VestigiaView extends ItemView {
 				cls: "vestigia-fractures-group-header",
 			});
 
-			groupHeader.createEl("span", {
+			groupHeader.createSpan({
 				text: sourcePath.split("/").pop() ?? sourcePath,
 				cls: "vestigia-fractures-source",
 			});
 
-			groupHeader.createEl("span", {
+			groupHeader.createSpan({
 				text: String(issues.length).padStart(2, "0"),
 				cls: "vestigia-fractures-group-count",
 			});
@@ -818,11 +806,20 @@ export class VestigiaView extends ItemView {
 		}
 	}
 
+	private getIssueTarget(issue: AnalysisIssue): string {
+		const target = issue.metadata?.target;
+
+		return typeof target === "string"
+			? target
+			: issue.message;
+	}
+
 	private renderBrokenReferenceItem(
 		container: HTMLElement,
 		issue: AnalysisIssue
 	): void {
 		const type = issue.ruleId as BrokenReferenceType;
+		const target = this.getIssueTarget(issue);
 
 		const labels: Record<BrokenReferenceType, string> = {
 			"missing-note": "Missing note",
@@ -841,9 +838,7 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-fractures-item",
 			attr: {
 				type: "button",
-				"aria-label": `Open source for ${String(
-					issue.metadata?.target ?? issue.message
-				)}`,
+				"aria-label": `Open source for ${target}`,
 			},
 		});
 
@@ -857,17 +852,17 @@ export class VestigiaView extends ItemView {
 			cls: "vestigia-fractures-item-content",
 		});
 
-		content.createEl("span", {
+		content.createSpan({
 			text: labels[type] ?? "Broken reference",
 			cls: "vestigia-fractures-item-type",
 		});
 
-		content.createEl("span", {
-			text: String(issue.metadata?.target ?? issue.message),
+		content.createSpan({
+			text: target,
 			cls: "vestigia-fractures-item-target",
 		});
 
-		content.createEl("span", {
+		content.createSpan({
 			text: issue.severity === "info"
 				? "Informational"
 				: "Warning",
@@ -1086,7 +1081,7 @@ export class VestigiaView extends ItemView {
 		});
 
 		content.createSpan({
-			text: String(issue.metadata?.target ?? issue.message),
+			text: this.getIssueTarget(issue),
 			cls: "vestigia-fractures-item-target",
 		});
 

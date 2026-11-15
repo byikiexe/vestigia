@@ -17,38 +17,16 @@ export class AnalysisService {
 		this.analyzers.push(analyzer);
 	}
 
+
 	async run(): Promise<AnalysisResult[]> {
 		const results: AnalysisResult[] = [];
-		const startTime = performance.now();
 
-		console.group("[Vestigia] Vault analysis");
-
-		try {
-			for (const analyzer of this.analyzers) {
-				const analyzerStart = performance.now();
-
-				const result = await analyzer.analyze(this.app);
-
-				const duration = performance.now() - analyzerStart;
-
-				results.push(result);
-
-				console.log(
-					`${analyzer.name}: ${duration.toFixed(2)} ms`,
-					{
-						issues: result.issues.length,
-						durationMs: duration,
-					}
-				);
-			}
-
-			console.log(
-				`Total analysis: ${(performance.now() - startTime).toFixed(2)} ms`
-			);
-
-			return results;
-		} finally {
-			console.groupEnd();
+		for (const analyzer of this.analyzers) {
+			const result = await analyzer.analyze(this.app);
+			results.push(result);
 		}
+
+		return results;
 	}
+
 }

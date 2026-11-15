@@ -84,13 +84,6 @@ export class BrokenLinksAnalyzer implements VaultAnalyzer {
 				});
 			}
 		}
-		
-		console.log("[Vestigia] Reference metrics", {
-			totalNoteReferences,
-			brokenNoteReferences,
-			totalAttachmentReferences,
-			brokenAttachmentReferences,
-		});
 
 		return {
 			analyzerId: this.id,
