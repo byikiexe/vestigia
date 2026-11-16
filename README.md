@@ -65,7 +65,7 @@ Vestigia is now ready to analyze your vault.
 
 ### Community plugin installation
 
-Once Vestigia is available in the official Obsidian Community Plugins directory, you will be able to install it directly from Obsidian:
+Vestigia is available in the official Obsidian Community Plugins directory. You can install it directly from Obsidian:
 
 1. Open **Settings → Community plugins**.
 2. Select **Browse**.
