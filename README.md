@@ -2,6 +2,8 @@
 
 **Trace what your knowledge leaves behind.**
 
+[![XERJ Corpus Hub contributor](https://hub.xerj.org/contributors/byikiexe/badge.svg)](https://hub.xerj.org/contributors/byikiexe)
+
 vestigia is an Obsidian plugin that helps you explore and understand the structure of your vault.
 
 Over time, notes accumulate, references break, and connections become harder to track. vestigia brings these structural details into focus through a minimal, purpose-built dashboard.
